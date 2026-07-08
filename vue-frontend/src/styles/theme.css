@@ -1,0 +1,131 @@
+/* 覆盖 Element Plus SCSS 变量 */
+:root {
+  --el-color-primary: #409EFF;
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 6px;
+  --el-font-size-base: 14px;
+}
+
+/* 卡片美化 */
+.el-card {
+  border-radius: var(--card-radius, 12px) !important;
+  border: none !important;
+  box-shadow: var(--card-shadow, 0 2px 12px rgba(0,0,0,0.06)) !important;
+  transition: var(--transition-normal, all 0.3s ease) !important;
+}
+.el-card:hover {
+  box-shadow: var(--card-shadow-hover, 0 4px 20px rgba(0,0,0,0.1)) !important;
+}
+.el-card__header {
+  padding: 16px 20px !important;
+  border-bottom: 1px solid #ebeef5 !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+}
+
+/* 表格美化 */
+.el-table {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+.el-table th.el-table__cell {
+  background-color: #f5f7fa !important;
+  font-weight: 600 !important;
+  color: #303133 !important;
+}
+.el-table--striped .el-table__body tr.el-table__row--striped td {
+  background-color: #fafafa !important;
+}
+.el-table__body tr:hover > td {
+  background-color: #ecf5ff !important;
+}
+
+/* 按钮美化 */
+.el-button {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+}
+.el-button--primary {
+  box-shadow: 0 2px 6px rgba(64,158,255,0.3) !important;
+}
+.el-button--success {
+  box-shadow: 0 2px 6px rgba(103,194,58,0.3) !important;
+}
+.el-button--warning {
+  box-shadow: 0 2px 6px rgba(230,162,60,0.3) !important;
+}
+.el-button--danger {
+  box-shadow: 0 2px 6px rgba(245,108,108,0.3) !important;
+}
+
+/* 对话框美化 */
+.el-dialog {
+  border-radius: 12px !important;
+}
+.el-dialog__header {
+  padding: 20px 20px 10px !important;
+  font-weight: 600 !important;
+}
+.el-dialog__body {
+  padding: 20px !important;
+}
+
+/* 抽屉美化 */
+.el-drawer {
+  border-radius: 12px 0 0 12px !important;
+}
+
+/* 空状态居中 */
+.el-empty {
+  padding: 40px 0 !important;
+}
+
+/* 步骤条美化 */
+.el-steps {
+  margin: 20px 0 !important;
+}
+
+/* 标签美化 */
+.el-tag {
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+}
+
+/* 页面滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 全局字体 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f0f2f5;
+  margin: 0;
+  padding: 0;
+}
+
+/* 统一卡片标题 */
+.card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+/* 表单标签 */
+.el-form-item__label {
+  font-weight: 500 !important;
+}
+
+/* 分页居中 */
+.el-pagination {
+  margin-top: 16px;
+  justify-content: center;
+}

@@ -1,0 +1,1 @@
+function g(n){const t=new Date,a=t.getFullYear(),r=String(t.getMonth()+1).padStart(2,"0"),e=String(t.getDate()).padStart(2,"0"),o=String(Math.floor(Math.random()*999)+1).padStart(3,"0");return`${n}${a}${r}${e}${o}`}function d(n,t,a){return`${n}${t}${String(a).padStart(2,"0")}`}export{d as a,g};
