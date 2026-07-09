@@ -254,3 +254,14 @@ def purchase_in_stock_rollback(purchase_id: str, operator: str = "系统", db: S
     db.commit()
     db.refresh(o)
     return o
+
+
+# ==================== 关联退货单查询 ====================
+@router.get("/{purchase_id}/returns")
+def get_purchase_returns(purchase_id: str, db: Session = Depends(get_db)):
+    """查询某采购单的所有退货单"""
+    from ..models import PurchaseReturnOrder
+    rows = db.query(PurchaseReturnOrder).filter(
+        PurchaseReturnOrder.PurchaseID == purchase_id
+    ).order_by(PurchaseReturnOrder.ReturnDate.desc()).all()
+    return rows

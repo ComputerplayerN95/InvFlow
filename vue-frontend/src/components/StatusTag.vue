@@ -17,6 +17,10 @@ const statusMap = {
   '已审核': 'success',
   '草稿': 'warning',
   '已回退': 'info',
+  '已退货': 'danger',
+  '部分退货': 'warning',
+  '盘点完成': 'success',
+  '待盘点': 'warning',
 }
 
 const tagType = computed(() => statusMap[props.status] || 'info')

@@ -211,3 +211,38 @@ def agent_stock_summary(db: Session = Depends(get_db)):
         ORDER BY total_value DESC
     """)).mappings().all()
     return {"summary": [dict(r) for r in rows]}
+
+
+# ==================== FIFO 实际成本毛利报表 ====================
+@router.get("/fifo-sales-profit")
+def fifo_sales_profit(year_month: str = Query(..., description="年月，格式YYYY-MM"),
+                       db: Session = Depends(get_db)):
+    """FIFO实际成本毛利报表（存储过程）"""
+    rows = db.execute(text("CALL sp_monthly_sales_profit_fifo(:ym)"),
+                      {"ym": year_month}).mappings().all()
+    return {"year_month": year_month, "report": [dict(r) for r in rows]}
+
+
+@router.get("/fifo-cost-comparison")
+def fifo_cost_comparison(year_month: str = Query(..., description="年月，格式YYYY-MM"),
+                          db: Session = Depends(get_db)):
+    """FIFO vs 均价法对比（存储过程）"""
+    rows = db.execute(text("CALL sp_monthly_cost_comparison(:ym)"),
+                      {"ym": year_month}).mappings().all()
+    return {"year_month": year_month, "report": [dict(r) for r in rows]}
+
+
+@router.get("/sale-out-batch-detail")
+def sale_out_batch_detail(
+    sale_detail_id: str = Query(..., description="销售明细ID"),
+    db: Session = Depends(get_db),
+):
+    """查询某销售明细的FIFO批次扣减详情"""
+    rows = db.execute(text("""
+        SELECT sob.*, bs.UnitPrice, bs.InDate
+        FROM SaleOutBatch sob
+        JOIN BatchStock bs ON sob.BatchID = bs.BatchID
+        WHERE sob.SaleDetailID = :sdid
+        ORDER BY bs.InDate
+    """), {"sdid": sale_detail_id}).mappings().all()
+    return [dict(r) for r in rows]

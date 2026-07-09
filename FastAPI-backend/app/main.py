@@ -5,6 +5,7 @@ from .config import APP_TITLE, APP_VERSION, HOST, PORT
 from .routers import (
     category, warehouse, supplier, customer, product,
     purchase, sale, transfer, stock, reports,
+    returns, stock_check,
 )
 import os
 
@@ -30,6 +31,8 @@ app.include_router(sale.router)
 app.include_router(transfer.router)
 app.include_router(stock.router)
 app.include_router(reports.router)
+app.include_router(returns.router)
+app.include_router(stock_check.router)
 
 # 注册前端静态文件（开发时用 npm run dev，部署时用 npm run build）
 frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "vue-frontend", "dist")

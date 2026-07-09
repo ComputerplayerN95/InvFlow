@@ -259,3 +259,14 @@ def sale_out_stock_rollback(sale_id: str, operator: str = "系统", db: Session 
     db.commit()
     db.refresh(o)
     return {"success": True, "data": o}
+
+
+# ==================== 关联退货单查询 ====================
+@router.get("/{sale_id}/returns")
+def get_sale_returns(sale_id: str, db: Session = Depends(get_db)):
+    """查询某销售单的所有退货单"""
+    from ..models import SaleReturnOrder
+    rows = db.query(SaleReturnOrder).filter(
+        SaleReturnOrder.SaleID == sale_id
+    ).order_by(SaleReturnOrder.ReturnDate.desc()).all()
+    return rows

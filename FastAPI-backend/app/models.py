@@ -178,3 +178,112 @@ class SaleOutBatch(Base):
     Quantity = Column(Numeric(18, 2), nullable=False, comment='从该批次扣减的数量')
     UnitPrice = Column(Numeric(18, 2), nullable=False, comment='该批次的入库单价(FIFO成本)')
     OutDate = Column(DateTime, nullable=False, comment='出库时间')
+
+
+class PurchaseReturnOrder(Base):
+    __tablename__ = "PurchaseReturnOrder"
+    ReturnID = Column(String(20), primary_key=True)
+    PurchaseID = Column(String(20), ForeignKey("PurchaseOrder.PurchaseID", onupdate="CASCADE"), nullable=False)
+    SupplierID = Column(String(20), ForeignKey("Supplier.SupplierID", onupdate="CASCADE"), nullable=False)
+    WarehouseID = Column(String(20), ForeignKey("Warehouse.WarehouseID", onupdate="CASCADE"), nullable=False)
+    ReturnDate = Column(DateTime)
+    Status = Column(String(10), default="草稿")
+    TotalAmount = Column(Numeric(18, 2), default=0)
+    Operator = Column(String(20))
+    ReturnOperator = Column(String(20))
+    RollbackDate = Column(DateTime)
+    RollbackOperator = Column(String(20))
+    Remark = Column(Text)
+
+
+class PurchaseReturnDetail(Base):
+    __tablename__ = "PurchaseReturnDetail"
+    ReturnDetailID = Column(String(20), primary_key=True)
+    ReturnID = Column(String(20), ForeignKey("PurchaseReturnOrder.ReturnID", onupdate="CASCADE"), nullable=False)
+    PurchaseDetailID = Column(String(20), ForeignKey("PurchaseDetail.PurchaseDetailID", onupdate="CASCADE"), nullable=False)
+    ProductID = Column(String(20), ForeignKey("Product.ProductID", onupdate="CASCADE"), nullable=False)
+    Quantity = Column(Numeric(18, 2), default=0)
+    UnitPrice = Column(Numeric(18, 2), default=0)
+    Amount = Column(Numeric(18, 2), default=0)
+
+
+class SaleReturnOrder(Base):
+    __tablename__ = "SaleReturnOrder"
+    ReturnID = Column(String(20), primary_key=True)
+    SaleID = Column(String(20), ForeignKey("SaleOrder.SaleID", onupdate="CASCADE"), nullable=False)
+    CustomerID = Column(String(20), ForeignKey("Customer.CustomerID", onupdate="CASCADE"), nullable=False)
+    WarehouseID = Column(String(20), ForeignKey("Warehouse.WarehouseID", onupdate="CASCADE"), nullable=False)
+    ReturnDate = Column(DateTime)
+    Status = Column(String(10), default="草稿")
+    TotalAmount = Column(Numeric(18, 2), default=0)
+    Operator = Column(String(20))
+    ReturnOperator = Column(String(20))
+    RollbackDate = Column(DateTime)
+    RollbackOperator = Column(String(20))
+    Remark = Column(Text)
+
+
+class SaleReturnDetail(Base):
+    __tablename__ = "SaleReturnDetail"
+    ReturnDetailID = Column(String(20), primary_key=True)
+    ReturnID = Column(String(20), ForeignKey("SaleReturnOrder.ReturnID", onupdate="CASCADE"), nullable=False)
+    SaleDetailID = Column(String(20), ForeignKey("SaleDetail.SaleDetailID", onupdate="CASCADE"), nullable=False)
+    ProductID = Column(String(20), ForeignKey("Product.ProductID", onupdate="CASCADE"), nullable=False)
+    Quantity = Column(Numeric(18, 2), default=0)
+    UnitPrice = Column(Numeric(18, 2), default=0)
+    Amount = Column(Numeric(18, 2), default=0)
+
+
+class StockCheckOrder(Base):
+    __tablename__ = "StockCheckOrder"
+    CheckID = Column(String(20), primary_key=True)
+    WarehouseID = Column(String(20), ForeignKey("Warehouse.WarehouseID", onupdate="CASCADE"), nullable=False)
+    CheckDate = Column(DateTime)
+    Status = Column(String(10), default="草稿")
+    Operator = Column(String(20))
+    AuditOperator = Column(String(20))
+    AuditDate = Column(DateTime)
+    RollbackDate = Column(DateTime)
+    RollbackOperator = Column(String(20))
+    Remark = Column(Text)
+
+
+class StockCheckDetail(Base):
+    __tablename__ = "StockCheckDetail"
+    CheckDetailID = Column(String(20), primary_key=True)
+    CheckID = Column(String(20), ForeignKey("StockCheckOrder.CheckID", onupdate="CASCADE"), nullable=False)
+    ProductID = Column(String(20), ForeignKey("Product.ProductID", onupdate="CASCADE"), nullable=False)
+    BookQuantity = Column(Numeric(18, 2), default=0)
+    ActualQuantity = Column(Numeric(18, 2), default=0)
+    DiffQuantity = Column(Numeric(18, 2), default=0)
+    UnitPrice = Column(Numeric(18, 2), default=0)
+    Remark = Column(Text)
+
+
+class ProfitLossOrder(Base):
+    __tablename__ = "ProfitLossOrder"
+    ProfitLossID = Column(String(20), primary_key=True)
+    WarehouseID = Column(String(20), ForeignKey("Warehouse.WarehouseID", onupdate="CASCADE"), nullable=False)
+    OrderDate = Column(DateTime)
+    Type = Column(String(10), nullable=False)
+    Status = Column(String(10), default="草稿")
+    TotalAmount = Column(Numeric(18, 2), default=0)
+    Operator = Column(String(20))
+    AuditOperator = Column(String(20))
+    AuditDate = Column(DateTime)
+    RollbackDate = Column(DateTime)
+    RollbackOperator = Column(String(20))
+    Remark = Column(Text)
+    CheckID = Column(String(20), ForeignKey("StockCheckOrder.CheckID", onupdate="CASCADE"))
+
+
+class ProfitLossDetail(Base):
+    __tablename__ = "ProfitLossDetail"
+    ProfitLossDetailID = Column(String(20), primary_key=True)
+    ProfitLossID = Column(String(20), ForeignKey("ProfitLossOrder.ProfitLossID", onupdate="CASCADE"), nullable=False)
+    ProductID = Column(String(20), ForeignKey("Product.ProductID", onupdate="CASCADE"), nullable=False)
+    Quantity = Column(Numeric(18, 2), default=0)
+    UnitPrice = Column(Numeric(18, 2), default=0)
+    Amount = Column(Numeric(18, 2), default=0)
+    BatchID = Column(String(20))
+    Remark = Column(Text)

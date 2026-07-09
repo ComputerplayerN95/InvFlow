@@ -332,3 +332,271 @@ class AntiSettlementRequest(BaseModel):
 class MessageResponse(BaseModel):
     message: str
     success: bool = True
+
+
+# ==================== 采购退货 Schema ====================
+class PurchaseReturnDetailItem(BaseModel):
+    ReturnDetailID: str
+    PurchaseDetailID: str
+    ProductID: str
+    Quantity: float
+    UnitPrice: float
+    Amount: float
+
+class PurchaseReturnCreate(BaseModel):
+    ReturnID: str
+    PurchaseID: str
+    SupplierID: str
+    WarehouseID: str
+    ReturnDate: Optional[datetime] = None
+    Operator: Optional[str] = None
+    Remark: Optional[str] = None
+    Details: List[PurchaseReturnDetailItem] = []
+
+class PurchaseReturnUpdate(BaseModel):
+    ReturnDate: Optional[datetime] = None
+    Operator: Optional[str] = None
+    Remark: Optional[str] = None
+    Details: Optional[List[PurchaseReturnDetailItem]] = None
+
+class PurchaseReturnDetailOut(BaseModel):
+    ReturnDetailID: str
+    ReturnID: str
+    PurchaseDetailID: str
+    ProductID: str
+    Quantity: float
+    UnitPrice: float
+    Amount: float
+    class Config: from_attributes = True
+
+class PurchaseReturnOrderOut(BaseModel):
+    ReturnID: str
+    PurchaseID: str
+    SupplierID: str
+    WarehouseID: str
+    ReturnDate: Optional[datetime] = None
+    Status: str = "草稿"
+    TotalAmount: Optional[float] = 0
+    Operator: Optional[str] = None
+    ReturnOperator: Optional[str] = None
+    RollbackDate: Optional[datetime] = None
+    RollbackOperator: Optional[str] = None
+    Remark: Optional[str] = None
+    class Config: from_attributes = True
+
+class PurchaseReturnOrderFullOut(PurchaseReturnOrderOut):
+    SupplierName: Optional[str] = None
+    WarehouseName: Optional[str] = None
+    Details: List[PurchaseReturnDetailOut] = []
+
+
+# ==================== 销售退货 Schema ====================
+class SaleReturnDetailItem(BaseModel):
+    ReturnDetailID: str
+    SaleDetailID: str
+    ProductID: str
+    Quantity: float
+    UnitPrice: float
+    Amount: float
+
+class SaleReturnCreate(BaseModel):
+    ReturnID: str
+    SaleID: str
+    CustomerID: str
+    WarehouseID: str
+    ReturnDate: Optional[datetime] = None
+    Operator: Optional[str] = None
+    Remark: Optional[str] = None
+    Details: List[SaleReturnDetailItem] = []
+
+class SaleReturnUpdate(BaseModel):
+    ReturnDate: Optional[datetime] = None
+    Operator: Optional[str] = None
+    Remark: Optional[str] = None
+    Details: Optional[List[SaleReturnDetailItem]] = None
+
+class SaleReturnDetailOut(BaseModel):
+    ReturnDetailID: str
+    ReturnID: str
+    SaleDetailID: str
+    ProductID: str
+    Quantity: float
+    UnitPrice: float
+    Amount: float
+    class Config: from_attributes = True
+
+class SaleReturnOrderOut(BaseModel):
+    ReturnID: str
+    SaleID: str
+    CustomerID: str
+    WarehouseID: str
+    ReturnDate: Optional[datetime] = None
+    Status: str = "草稿"
+    TotalAmount: Optional[float] = 0
+    Operator: Optional[str] = None
+    ReturnOperator: Optional[str] = None
+    RollbackDate: Optional[datetime] = None
+    RollbackOperator: Optional[str] = None
+    Remark: Optional[str] = None
+    class Config: from_attributes = True
+
+class SaleReturnOrderFullOut(SaleReturnOrderOut):
+    CustomerName: Optional[str] = None
+    WarehouseName: Optional[str] = None
+    Details: List[SaleReturnDetailOut] = []
+
+
+# ==================== 盘点单 Schema ====================
+class StockCheckDetailItem(BaseModel):
+    CheckDetailID: str
+    ProductID: str
+    BookQuantity: float
+    ActualQuantity: float
+    DiffQuantity: float = 0
+    UnitPrice: float = 0
+    Remark: Optional[str] = None
+
+class StockCheckCreate(BaseModel):
+    CheckID: str
+    WarehouseID: str
+    CheckDate: Optional[datetime] = None
+    Operator: Optional[str] = None
+    Remark: Optional[str] = None
+    Details: List[StockCheckDetailItem] = []
+
+class StockCheckUpdate(BaseModel):
+    CheckDate: Optional[datetime] = None
+    Operator: Optional[str] = None
+    Remark: Optional[str] = None
+    Details: Optional[List[StockCheckDetailItem]] = None
+
+class StockCheckDetailOut(BaseModel):
+    CheckDetailID: str
+    CheckID: str
+    ProductID: str
+    BookQuantity: float
+    ActualQuantity: float
+    DiffQuantity: float
+    UnitPrice: float
+    Remark: Optional[str] = None
+    class Config: from_attributes = True
+
+class StockCheckOrderOut(BaseModel):
+    CheckID: str
+    WarehouseID: str
+    CheckDate: Optional[datetime] = None
+    Status: str = "草稿"
+    Operator: Optional[str] = None
+    AuditOperator: Optional[str] = None
+    AuditDate: Optional[datetime] = None
+    RollbackDate: Optional[datetime] = None
+    RollbackOperator: Optional[str] = None
+    Remark: Optional[str] = None
+    class Config: from_attributes = True
+
+class StockCheckOrderFullOut(StockCheckOrderOut):
+    WarehouseName: Optional[str] = None
+    Details: List[StockCheckDetailOut] = []
+
+
+# ==================== 损益单 Schema ====================
+class ProfitLossDetailItem(BaseModel):
+    ProfitLossDetailID: str
+    ProductID: str
+    Quantity: float
+    UnitPrice: float
+    Amount: float
+    BatchID: Optional[str] = None
+    Remark: Optional[str] = None
+
+class ProfitLossCreate(BaseModel):
+    ProfitLossID: str
+    WarehouseID: str
+    OrderDate: Optional[datetime] = None
+    Type: str  # 盘盈/盘亏
+    Operator: Optional[str] = None
+    Remark: Optional[str] = None
+    CheckID: Optional[str] = None
+    Details: List[ProfitLossDetailItem] = []
+
+class ProfitLossUpdate(BaseModel):
+    OrderDate: Optional[datetime] = None
+    Type: Optional[str] = None
+    Operator: Optional[str] = None
+    Remark: Optional[str] = None
+    Details: Optional[List[ProfitLossDetailItem]] = None
+
+class ProfitLossDetailOut(BaseModel):
+    ProfitLossDetailID: str
+    ProfitLossID: str
+    ProductID: str
+    Quantity: float
+    UnitPrice: float
+    Amount: float
+    BatchID: Optional[str] = None
+    Remark: Optional[str] = None
+    class Config: from_attributes = True
+
+class ProfitLossOrderOut(BaseModel):
+    ProfitLossID: str
+    WarehouseID: str
+    OrderDate: Optional[datetime] = None
+    Type: str
+    Status: str = "草稿"
+    TotalAmount: Optional[float] = 0
+    Operator: Optional[str] = None
+    AuditOperator: Optional[str] = None
+    AuditDate: Optional[datetime] = None
+    RollbackDate: Optional[datetime] = None
+    RollbackOperator: Optional[str] = None
+    Remark: Optional[str] = None
+    CheckID: Optional[str] = None
+    class Config: from_attributes = True
+
+class ProfitLossOrderFullOut(ProfitLossOrderOut):
+    WarehouseName: Optional[str] = None
+    Details: List[ProfitLossDetailOut] = []
+
+
+# ==================== FIFO 报表 Schema ====================
+class FIFOSalesProfitItem(BaseModel):
+    ProductID: str
+    ProductName: Optional[str] = None
+    Spec: Optional[str] = None
+    Unit: Optional[str] = None
+    CategoryName: Optional[str] = None
+    SaleQty: Optional[float] = 0
+    SaleAmount: Optional[float] = 0
+    CostAmount: Optional[float] = 0
+    GrossProfit: Optional[float] = 0
+    ProfitRate: Optional[float] = 0
+
+class FIFOSalesProfitReport(BaseModel):
+    year_month: str
+    report: List[FIFOSalesProfitItem] = []
+
+class FIFOCostComparisonItem(BaseModel):
+    ProductID: str
+    ProductName: Optional[str] = None
+    Spec: Optional[str] = None
+    Unit: Optional[str] = None
+    SaleQty: Optional[float] = 0
+    FIFOCostAmount: Optional[float] = 0
+    AverageCostAmount: Optional[float] = 0
+    FIFOGrossProfit: Optional[float] = 0
+    AverageGrossProfit: Optional[float] = 0
+    Difference: Optional[float] = 0
+
+class FIFOCostComparisonReport(BaseModel):
+    year_month: str
+    report: List[FIFOCostComparisonItem] = []
+
+class SaleOutBatchOut(BaseModel):
+    SaleOutBatchID: str
+    SaleDetailID: str
+    BatchID: str
+    Quantity: float
+    UnitPrice: float
+    OutDate: datetime
+    InDate: Optional[datetime] = None
+    class Config: from_attributes = True

@@ -37,6 +37,8 @@
           <el-menu-item index="/purchases">采购管理</el-menu-item>
           <el-menu-item index="/sales">销售管理</el-menu-item>
           <el-menu-item index="/transfers">调拨管理</el-menu-item>
+          <el-menu-item index="/purchase-returns">采购退货</el-menu-item>
+          <el-menu-item index="/sale-returns">销售退货</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="4">
           <template #title>
@@ -46,6 +48,7 @@
           <el-menu-item index="/stock-total">库存总表</el-menu-item>
           <el-menu-item index="/stock-warehouse">仓库库存</el-menu-item>
           <el-menu-item index="/stock-monthly">月度结存</el-menu-item>
+          <el-menu-item index="/stock-checks">盘点管理</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="5">
           <template #title>

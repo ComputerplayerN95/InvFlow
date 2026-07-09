@@ -58,6 +58,55 @@
         </el-card>
       </el-tab-pane>
 
+      <!-- FIFO 销售毛利统计 -->
+      <el-tab-pane label="FIFO销售毛利" name="fifoSalesProfit">
+        <el-card>
+          <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+            <span>选择月份：</span>
+            <el-date-picker v-model="fifoProfitMonth" type="month" placeholder="选择月份" value-format="YYYY-MM" style="width:160px" />
+            <el-button type="primary" @click="loadFifoSalesProfit">查询</el-button>
+            <el-button @click="exportFifoSalesProfitCSV" :disabled="fifoProfitData.length === 0">导出CSV</el-button>
+          </div>
+
+          <el-alert title="FIFO 先进先出法计算销售毛利，与均价法对比可分析成本差异" type="info" show-icon :closable="false" style="margin-bottom:12px" />
+
+          <CrudTable :data="fifoProfitData" :columns="fifoProfitColumns" :show-pagination="false" :show-index="true" action-width="0">
+            <template #saleAmount="{ row }">{{ row.total_sale_amount?.toFixed(2) }}</template>
+            <template #fifoCost="{ row }">{{ row.fifo_cost_amount?.toFixed(2) }}</template>
+            <template #avgCost="{ row }">{{ row.avg_cost_amount?.toFixed(2) }}</template>
+            <template #fifoProfit="{ row }">
+              <span :style="{color: row.fifo_gross_profit >= 0 ? '#67C23A' : '#F56C6C'}">{{ row.fifo_gross_profit?.toFixed(2) }}</span>
+            </template>
+            <template #profitDiff="{ row }">
+              <span :style="{color: row.profit_diff >= 0 ? '#909399' : '#909399'}">{{ row.profit_diff?.toFixed(2) }}</span>
+            </template>
+          </CrudTable>
+        </el-card>
+      </el-tab-pane>
+
+      <!-- FIFO 均价成本对比 -->
+      <el-tab-pane label="FIFO成本对比" name="fifoCostComparison">
+        <el-card>
+          <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+            <span>选择月份：</span>
+            <el-date-picker v-model="fifoCostMonth" type="month" placeholder="选择月份" value-format="YYYY-MM" style="width:160px" />
+            <el-button type="primary" @click="loadFifoCostComparison">查询</el-button>
+            <el-button @click="exportFifoCostCSV" :disabled="fifoCostData.length === 0">导出CSV</el-button>
+          </div>
+
+          <el-alert title="对比同一月份 FIFO 与均价法的销售成本差异，反映不同计价方式对利润的影响" type="info" show-icon :closable="false" style="margin-bottom:12px" />
+
+          <CrudTable :data="fifoCostData" :columns="fifoCostColumns" :show-pagination="false" :show-index="true" action-width="0">
+            <template #saleQty="{ row }">{{ row.total_sale_qty }}</template>
+            <template #fifoCost="{ row }">{{ row.fifo_cost?.toFixed(2) }}</template>
+            <template #avgCost="{ row }">{{ row.avg_cost?.toFixed(2) }}</template>
+            <template #costDiff="{ row }">
+              <span :style="{color: row.cost_diff >= 0 ? '#E6A23C' : '#67C23A'}">{{ row.cost_diff?.toFixed(2) }}</span>
+            </template>
+          </CrudTable>
+        </el-card>
+      </el-tab-pane>
+
       <!-- 采购/销售综合查询 -->
       <el-tab-pane label="综合查询" name="query">
         <el-card>
@@ -260,6 +309,70 @@ function downloadCSV(headers, rows, filename) {
   link.download = filename
   link.click()
   URL.revokeObjectURL(link.href)
+}
+
+// ---- FIFO 销售毛利统计 ----
+const fifoProfitMonth = ref('')
+const fifoProfitData = ref([])
+
+const fifoProfitColumns = [
+  { prop: 'ProductID', label: '商品编号', width: 120 },
+  { prop: 'ProductName', label: '商品名称', minWidth: 140 },
+  { prop: 'total_sale_qty', label: '销量', width: 80 },
+  { label: '销售收入(元)', width: 130, slot: 'saleAmount' },
+  { label: 'FIFO成本(元)', width: 130, slot: 'fifoCost' },
+  { label: '均价成本(元)', width: 130, slot: 'avgCost' },
+  { label: 'FIFO毛利(元)', width: 130, slot: 'fifoProfit' },
+  { label: '利润差异(元)', width: 120, slot: 'profitDiff' },
+]
+
+const loadFifoSalesProfit = async () => {
+  if (!fifoProfitMonth.value) { ElMessage.warning('请选择月份'); return }
+  const r = await reportApi.fifoSalesProfit({ year_month: fifoProfitMonth.value })
+  fifoProfitData.value = Array.isArray(r) ? r : (r.data?.report || r.report || [])
+}
+
+function exportFifoSalesProfitCSV() {
+  const headers = ['商品编号','商品名称','销量','销售收入','FIFO成本','均价成本','FIFO毛利','利润差异']
+  const rows = fifoProfitData.value.map(row => [
+    row.ProductID, row.ProductName, row.total_sale_qty,
+    row.total_sale_amount?.toFixed(2), row.fifo_cost_amount?.toFixed(2),
+    row.avg_cost_amount?.toFixed(2), row.fifo_gross_profit?.toFixed(2),
+    row.profit_diff?.toFixed(2),
+  ])
+  downloadCSV(headers, rows, `FIFO销售毛利_${fifoProfitMonth.value || 'all'}.csv`)
+}
+
+// ---- FIFO 成本对比 ----
+const fifoCostMonth = ref('')
+const fifoCostData = ref([])
+
+const fifoCostColumns = [
+  { prop: 'ProductID', label: '商品编号', width: 120 },
+  { prop: 'ProductName', label: '商品名称', minWidth: 140 },
+  { label: '销量', width: 80, slot: 'saleQty' },
+  { prop: 'fifo_unit_cost', label: 'FIFO单价', width: 110 },
+  { prop: 'avg_unit_cost', label: '均价单价', width: 110 },
+  { label: 'FIFO总成本(元)', width: 130, slot: 'fifoCost' },
+  { label: '均价总成本(元)', width: 130, slot: 'avgCost' },
+  { label: '成本差异(元)', width: 120, slot: 'costDiff' },
+]
+
+const loadFifoCostComparison = async () => {
+  if (!fifoCostMonth.value) { ElMessage.warning('请选择月份'); return }
+  const r = await reportApi.fifoCostComparison({ year_month: fifoCostMonth.value })
+  fifoCostData.value = Array.isArray(r) ? r : (r.data?.report || r.report || [])
+}
+
+function exportFifoCostCSV() {
+  const headers = ['商品编号','商品名称','销量','FIFO单价','均价单价','FIFO总成本','均价总成本','成本差异']
+  const rows = fifoCostData.value.map(row => [
+    row.ProductID, row.ProductName, row.total_sale_qty,
+    row.fifo_unit_cost?.toFixed(2), row.avg_unit_cost?.toFixed(2),
+    row.fifo_cost?.toFixed(2), row.avg_cost?.toFixed(2),
+    row.cost_diff?.toFixed(2),
+  ])
+  downloadCSV(headers, rows, `FIFO成本对比_${fifoCostMonth.value || 'all'}.csv`)
 }
 
 // ---- 初始化下拉选项 ----

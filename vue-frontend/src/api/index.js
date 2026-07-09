@@ -127,4 +127,51 @@ export const reportApi = {
   salesProfit: (params) => api.get('/reports/monthly-sales-profit', { params }),
   purchaseQuery: (params) => api.get('/reports/purchase-query', { params }),
   saleQuery: (params) => api.get('/reports/sale-query', { params }),
+  // FIFO 报表
+  fifoSalesProfit: (params) => api.get('/reports/fifo-sales-profit', { params }),
+  fifoCostComparison: (params) => api.get('/reports/fifo-cost-comparison', { params }),
+}
+
+// ==================== 采购退货 API ====================
+export const purchaseReturnApi = {
+  list: (params) => api.get('/purchase-returns/', { params }),
+  get: (id) => api.get(`/purchase-returns/${id}`),
+  create: (data) => api.post('/purchase-returns/', data),
+  update: (id, data) => api.put(`/purchase-returns/${id}`, data),
+  delete: (id) => api.delete(`/purchase-returns/${id}`),
+  execute: (id) => api.post(`/purchase-returns/${id}/execute`),
+  rollback: (id) => api.post(`/purchase-returns/${id}/rollback`),
+}
+
+// ==================== 销售退货 API ====================
+export const saleReturnApi = {
+  list: (params) => api.get('/sale-returns/', { params }),
+  get: (id) => api.get(`/sale-returns/${id}`),
+  create: (data) => api.post('/sale-returns/', data),
+  update: (id, data) => api.put(`/sale-returns/${id}`, data),
+  delete: (id) => api.delete(`/sale-returns/${id}`),
+  execute: (id) => api.post(`/sale-returns/${id}/execute`),
+  rollback: (id) => api.post(`/sale-returns/${id}/rollback`),
+}
+
+// ==================== 盘点 API ====================
+export const stockCheckApi = {
+  list: (params) => api.get('/stock-checks/', { params }),
+  get: (id) => api.get(`/stock-checks/${id}`),
+  create: (data) => api.post('/stock-checks/', data),
+  update: (id, data) => api.put(`/stock-checks/${id}`, data),
+  delete: (id) => api.delete(`/stock-checks/${id}`),
+  audit: (id) => api.post(`/stock-checks/${id}/audit`),
+  rollback: (id) => api.post(`/stock-checks/${id}/rollback`),
+}
+
+// ==================== 损益单 API ====================
+export const profitLossApi = {
+  list: (params) => api.get('/profit-loss/', { params }),
+  get: (id) => api.get(`/profit-loss/${id}`),
+  create: (data) => api.post('/profit-loss/', data),
+  update: (id, data) => api.put(`/profit-loss/${id}`, data),
+  delete: (id) => api.delete(`/profit-loss/${id}`),
+  audit: (id) => api.post(`/profit-loss/${id}/audit`),
+  rollback: (id) => api.post(`/profit-loss/${id}/rollback`),
 }
