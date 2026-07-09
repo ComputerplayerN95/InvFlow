@@ -7,6 +7,9 @@ from .routers import (
     purchase, sale, transfer, stock, reports,
     returns, stock_check,
 )
+# 注册 Agent 路由（需提前导入 tools 模块以触发装饰器注册）
+from .agent import tools  # noqa: F401 — 触发 ToolRegistry 注册
+from .agent.router import router as agent_router
 import os
 
 app = FastAPI(title=APP_TITLE, version=APP_VERSION)
@@ -33,6 +36,7 @@ app.include_router(stock.router)
 app.include_router(reports.router)
 app.include_router(returns.router)
 app.include_router(stock_check.router)
+app.include_router(agent_router)  # AI 智能助手
 
 # 注册前端静态文件（开发时用 npm run dev，部署时用 npm run build）
 frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "vue-frontend", "dist")

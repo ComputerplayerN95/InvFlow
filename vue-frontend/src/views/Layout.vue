@@ -82,6 +82,7 @@
         </router-view>
       </el-main>
     </el-container>
+    <ChatAssistant />
   </el-container>
 </template>
 
@@ -89,6 +90,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Odometer, Box, Tickets, DataAnalysis, Document, Fold, Expand } from '@element-plus/icons-vue'
+import ChatAssistant from '../components/ChatAssistant.vue'
 
 const route = useRoute()
 const isCollapse = ref(false)
