@@ -72,13 +72,13 @@
 
           <CrudTable :data="fifoProfitData" :columns="fifoProfitColumns" :show-pagination="false" :show-index="true" action-width="0">
             <template #saleAmount="{ row }">{{ row.total_sale_amount?.toFixed(2) }}</template>
-            <template #fifoCost="{ row }">{{ row.fifo_cost_amount?.toFixed(2) }}</template>
-            <template #avgCost="{ row }">{{ row.avg_cost_amount?.toFixed(2) }}</template>
+            <template #fifoCost="{ row }">{{ (row.total_fifo_cost_amount || 0).toFixed(2) }}</template>
+            <template #avgCost="{ row }">{{ (row.avg_price_total_cost || 0).toFixed(2) }}</template>
             <template #fifoProfit="{ row }">
-              <span :style="{color: row.fifo_gross_profit >= 0 ? '#67C23A' : '#F56C6C'}">{{ row.fifo_gross_profit?.toFixed(2) }}</span>
+              <span :style="{color: (row.fifo_gross_profit || 0) >= 0 ? '#67C23A' : '#F56C6C'}">{{ (row.fifo_gross_profit || 0).toFixed(2) }}</span>
             </template>
             <template #profitDiff="{ row }">
-              <span :style="{color: row.profit_diff >= 0 ? '#909399' : '#909399'}">{{ row.profit_diff?.toFixed(2) }}</span>
+              <span :style="{color: '#909399'}">{{ ((row.total_fifo_cost_amount || 0) - (row.avg_price_total_cost || 0)).toFixed(2) }}</span>
             </template>
           </CrudTable>
         </el-card>
@@ -97,11 +97,11 @@
           <el-alert title="对比同一月份 FIFO 与均价法的销售成本差异，反映不同计价方式对利润的影响" type="info" show-icon :closable="false" style="margin-bottom:12px" />
 
           <CrudTable :data="fifoCostData" :columns="fifoCostColumns" :show-pagination="false" :show-index="true" action-width="0">
-            <template #saleQty="{ row }">{{ row.total_sale_qty }}</template>
-            <template #fifoCost="{ row }">{{ row.fifo_cost?.toFixed(2) }}</template>
-            <template #avgCost="{ row }">{{ row.avg_cost?.toFixed(2) }}</template>
+            <template #saleQty="{ row }">{{ row.total_sale_qty || '-' }}</template>
+            <template #fifoCost="{ row }">{{ (row.fifo_total_cost || 0).toFixed(2) }}</template>
+            <template #avgCost="{ row }">{{ (row.avg_price_total_cost || 0).toFixed(2) }}</template>
             <template #costDiff="{ row }">
-              <span :style="{color: row.cost_diff >= 0 ? '#E6A23C' : '#67C23A'}">{{ row.cost_diff?.toFixed(2) }}</span>
+              <span :style="{color: (row.cost_diff || 0) >= 0 ? '#E6A23C' : '#67C23A'}">{{ (row.cost_diff || 0).toFixed(2) }}</span>
             </template>
           </CrudTable>
         </el-card>
@@ -320,8 +320,8 @@ const fifoProfitColumns = [
   { prop: 'ProductName', label: '商品名称', minWidth: 140 },
   { prop: 'total_sale_qty', label: '销量', width: 80 },
   { label: '销售收入(元)', width: 130, slot: 'saleAmount' },
-  { label: 'FIFO成本(元)', width: 130, slot: 'fifoCost' },
-  { label: '均价成本(元)', width: 130, slot: 'avgCost' },
+  { label: 'FIFO总成本(元)', width: 130, slot: 'fifoCost' },
+  { label: '均价总成本(元)', width: 130, slot: 'avgCost' },
   { label: 'FIFO毛利(元)', width: 130, slot: 'fifoProfit' },
   { label: '利润差异(元)', width: 120, slot: 'profitDiff' },
 ]
@@ -333,12 +333,12 @@ const loadFifoSalesProfit = async () => {
 }
 
 function exportFifoSalesProfitCSV() {
-  const headers = ['商品编号','商品名称','销量','销售收入','FIFO成本','均价成本','FIFO毛利','利润差异']
+  const headers = ['商品编号','商品名称','销量','销售收入','FIFO总成本','均价总成本','FIFO毛利','利润差异']
   const rows = fifoProfitData.value.map(row => [
     row.ProductID, row.ProductName, row.total_sale_qty,
-    row.total_sale_amount?.toFixed(2), row.fifo_cost_amount?.toFixed(2),
-    row.avg_cost_amount?.toFixed(2), row.fifo_gross_profit?.toFixed(2),
-    row.profit_diff?.toFixed(2),
+    (row.total_sale_amount || 0).toFixed(2), (row.total_fifo_cost_amount || 0).toFixed(2),
+    (row.avg_price_total_cost || 0).toFixed(2), (row.fifo_gross_profit || 0).toFixed(2),
+    ((row.total_fifo_cost_amount || 0) - (row.avg_price_total_cost || 0)).toFixed(2),
   ])
   downloadCSV(headers, rows, `FIFO销售毛利_${fifoProfitMonth.value || 'all'}.csv`)
 }
@@ -351,8 +351,8 @@ const fifoCostColumns = [
   { prop: 'ProductID', label: '商品编号', width: 120 },
   { prop: 'ProductName', label: '商品名称', minWidth: 140 },
   { label: '销量', width: 80, slot: 'saleQty' },
-  { prop: 'fifo_unit_cost', label: 'FIFO单价', width: 110 },
-  { prop: 'avg_unit_cost', label: '均价单价', width: 110 },
+  { prop: 'fifo_method_cost', label: 'FIFO单价', width: 110 },
+  { prop: 'avg_price_method_cost', label: '均价单价', width: 110 },
   { label: 'FIFO总成本(元)', width: 130, slot: 'fifoCost' },
   { label: '均价总成本(元)', width: 130, slot: 'avgCost' },
   { label: '成本差异(元)', width: 120, slot: 'costDiff' },
@@ -367,10 +367,10 @@ const loadFifoCostComparison = async () => {
 function exportFifoCostCSV() {
   const headers = ['商品编号','商品名称','销量','FIFO单价','均价单价','FIFO总成本','均价总成本','成本差异']
   const rows = fifoCostData.value.map(row => [
-    row.ProductID, row.ProductName, row.total_sale_qty,
-    row.fifo_unit_cost?.toFixed(2), row.avg_unit_cost?.toFixed(2),
-    row.fifo_cost?.toFixed(2), row.avg_cost?.toFixed(2),
-    row.cost_diff?.toFixed(2),
+    row.ProductID, row.ProductName, row.total_sale_qty || '',
+    (row.fifo_method_cost || 0).toFixed(2), (row.avg_price_method_cost || 0).toFixed(2),
+    (row.fifo_total_cost || 0).toFixed(2), (row.avg_price_total_cost || 0).toFixed(2),
+    (row.cost_diff || 0).toFixed(2),
   ])
   downloadCSV(headers, rows, `FIFO成本对比_${fifoCostMonth.value || 'all'}.csv`)
 }
