@@ -4,9 +4,11 @@
     <div class="float-btn" :class="{ active: visible }"
       :style="btnStyle"
       @mousedown.prevent="startBtnDrag">
-      <svg v-if="!visible" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 2a10 10 0 0 1 10 10c0 3.5-2 6.5-5 8l-3 2v-2.5A10 10 0 0 1 12 2z"/>
-        <path d="M8 10h8M8 14h5"/>
+      <svg v-if="!visible" viewBox="0 0 24 24" width="28" height="28">
+        <path d="M5 9a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V9z" fill="#fff"/>
+        <line x1="6" y1="11" x2="18" y2="11" stroke="#337ecc" stroke-width="0.8" opacity="0.25"/>
+        <circle cx="9.5" cy="14.5" r="1.3" fill="#337ecc"/><circle cx="14.5" cy="14.5" r="1.3" fill="#337ecc"/>
+        <path d="M10.5 17a2 2 0 0 0 3 0" fill="none" stroke="#337ecc" stroke-width="1.2" stroke-linecap="round"/>
       </svg>
       <svg v-else viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -19,8 +21,11 @@
         :style="panelStyle">
         <div class="chat-header" @mousedown.prevent="startDrag">
           <div class="header-info">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="#409EFF">
-              <path d="M12 2a10 10 0 0 1 10 10c0 3.5-2 6.5-5 8l-3 2v-2.5A10 10 0 0 1 12 2z"/>
+            <svg viewBox="0 0 24 24" width="20" height="20">
+              <path d="M5.5 9a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v8.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V9z" fill="#fff"/>
+              <line x1="6.5" y1="11" x2="17.5" y2="11" stroke="#409EFF" stroke-width="0.7" opacity="0.3"/>
+              <circle cx="9.5" cy="14" r="1.2" fill="#409EFF"/><circle cx="14.5" cy="14" r="1.2" fill="#409EFF"/>
+              <path d="M10.5 16.5a1.5 1.5 0 0 0 3 0" fill="none" stroke="#409EFF" stroke-width="1" stroke-linecap="round"/>
             </svg>
             <span>小库 AI 助手</span>
           </div>
@@ -36,8 +41,11 @@
         <div class="chat-messages" ref="msgContainer">
           <div v-for="(msg, i) in messages" :key="i" :class="['message', msg.role]">
             <div class="avatar" :class="msg.role">
-              <svg v-if="msg.role==='assistant'" viewBox="0 0 24 24" width="16" height="16" fill="#fff">
-                <path d="M12 2a10 10 0 0 1 10 10c0 3.5-2 6.5-5 8l-3 2v-2.5A10 10 0 0 1 12 2z"/>
+              <svg v-if="msg.role==='assistant'" viewBox="0 0 24 24" width="16" height="16">
+                <path d="M5.5 8.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-9z" fill="#fff"/>
+                <line x1="6.5" y1="10.5" x2="17.5" y2="10.5" stroke="#337ecc" stroke-width="0.6" opacity="0.25"/>
+                <circle cx="9.5" cy="13.5" r="1.1" fill="#337ecc"/><circle cx="14.5" cy="13.5" r="1.1" fill="#337ecc"/>
+                <path d="M10.5 16a1.5 1.5 0 0 0 3 0" fill="none" stroke="#337ecc" stroke-width="0.9" stroke-linecap="round"/>
               </svg>
               <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="#fff">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -49,8 +57,11 @@
           </div>
           <div v-if="loading" class="message assistant">
             <div class="avatar assistant">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="#fff">
-                <path d="M12 2a10 10 0 0 1 10 10c0 3.5-2 6.5-5 8l-3 2v-2.5A10 10 0 0 1 12 2z"/>
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M5.5 8.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-9z" fill="#fff"/>
+                <line x1="6.5" y1="10.5" x2="17.5" y2="10.5" stroke="#337ecc" stroke-width="0.6" opacity="0.25"/>
+                <circle cx="9.5" cy="13.5" r="1.1" fill="#337ecc"/><circle cx="14.5" cy="13.5" r="1.1" fill="#337ecc"/>
+                <path d="M10.5 16a1.5 1.5 0 0 0 3 0" fill="none" stroke="#337ecc" stroke-width="0.9" stroke-linecap="round"/>
               </svg>
             </div>
             <div class="bubble thinking">

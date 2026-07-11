@@ -22,6 +22,7 @@ const routes = [
       { path: '/stock-checks', name: 'StockCheckList', component: () => import('../views/StockCheckList.vue'), meta: { title: '盘点管理' } },
       { path: '/purchase-returns', name: 'PurchaseReturnList', component: () => import('../views/PurchaseReturnList.vue'), meta: { title: '采购退货' } },
       { path: '/sale-returns', name: 'SaleReturnList', component: () => import('../views/SaleReturnList.vue'), meta: { title: '销售退货' } },
+      { path: '/agent', name: 'AgentChat', component: () => import('../views/AgentChat.vue'), meta: { title: 'AI 智能助手' } },
       { path: '/reports', name: 'Reports', component: () => import('../views/Reports.vue'), meta: { title: '综合报表' } },
     ]
   }

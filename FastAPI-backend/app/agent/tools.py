@@ -307,3 +307,132 @@ def business_qa(query: str) -> str:
             return json.dumps({"found": False, "message": "知识库中未找到相关信息"}, ensure_ascii=False)
     except Exception as e:
         return json.dumps({"found": False, "error": str(e)}, ensure_ascii=False)
+
+
+# ==================== 创建工具（ID自动递增）====================
+
+def _next_id(db: Session, table: str, prefix: str, pad: int = 3) -> str:
+    """生成下一个递增编号，如 WH001 → WH004"""
+    try:
+        rows = db.execute(text(f"SELECT {table}ID FROM `{table}` ORDER BY LENGTH({table}ID) DESC, {table}ID DESC LIMIT 1")).mappings().all()
+        if rows:
+            last = rows[0][f"{table}ID"]
+            num = int(last[len(prefix):]) + 1
+        else:
+            num = 1
+        return f"{prefix}{str(num).zfill(pad)}"
+    except Exception:
+        return f"{prefix}{'001'}"
+
+
+@ToolRegistry.register()
+def create_warehouse(db: Session,
+                     name: str = "", location: str = "", phone: str = "",
+                     warehouse_id: str = "") -> str:
+    """创建仓库。name:仓库名称, location:地址(可选), phone:电话(可选), warehouse_id:编号(不传自动生成)"""
+    missing = []
+    if not name:
+        missing.append("仓库名称(name)")
+    if missing:
+        return json.dumps({"complete": False, "missing": missing,
+                           "hint": "请提供仓库名称"}, ensure_ascii=False)
+    wid = warehouse_id or _next_id(db, "Warehouse", "WH")
+    # 检查是否已存在
+    exists = db.execute(text("SELECT COUNT(*) FROM Warehouse WHERE WarehouseID = :id"), {"id": wid}).scalar()
+    if exists:
+        wid = _next_id(db, "Warehouse", "WH")
+    try:
+        db.execute(text("INSERT INTO Warehouse (WarehouseID, WarehouseName, Location, Phone) VALUES (:id, :n, :l, :p)"),
+                   {"id": wid, "n": name, "l": location or None, "p": phone or None})
+        db.commit()
+        return json.dumps({"complete": True, "success": True, "id": wid,
+                           "message": f"仓库 {wid}({name}) 创建成功"}, ensure_ascii=False)
+    except Exception as e:
+        db.rollback()
+        return json.dumps({"complete": False, "success": False, "error": str(e)}, ensure_ascii=False)
+
+
+@ToolRegistry.register()
+def create_supplier(db: Session,
+                    name: str = "", contact: str = "", phone: str = "",
+                    address: str = "", remark: str = "",
+                    supplier_id: str = "") -> str:
+    """创建供应商。name:供应商名称(必填), contact:联系人(可选), phone:电话(可选), address:地址(可选), remark:备注(可选), supplier_id:编号(不传自动生成)"""
+    missing = []
+    if not name:
+        missing.append("供应商名称(name)")
+    if missing:
+        return json.dumps({"complete": False, "missing": missing,
+                           "hint": "请提供供应商名称"}, ensure_ascii=False)
+    sid = supplier_id or _next_id(db, "Supplier", "SUP")
+    exists = db.execute(text("SELECT COUNT(*) FROM Supplier WHERE SupplierID = :id"), {"id": sid}).scalar()
+    if exists:
+        sid = _next_id(db, "Supplier", "SUP")
+    try:
+        db.execute(text("INSERT INTO Supplier (SupplierID, SupplierName, ContactPerson, Phone, Address, Remark) VALUES (:id, :n, :c, :p, :a, :r)"),
+                   {"id": sid, "n": name, "c": contact or None, "p": phone or None,
+                    "a": address or None, "r": remark or None})
+        db.commit()
+        return json.dumps({"complete": True, "success": True, "id": sid,
+                           "message": f"供应商 {sid}({name}) 创建成功"}, ensure_ascii=False)
+    except Exception as e:
+        db.rollback()
+        return json.dumps({"complete": False, "success": False, "error": str(e)}, ensure_ascii=False)
+
+
+@ToolRegistry.register()
+def create_customer(db: Session,
+                    name: str = "", contact: str = "", phone: str = "",
+                    address: str = "", remark: str = "",
+                    customer_id: str = "") -> str:
+    """创建客户。name:客户名称(必填), contact:联系人(可选), phone:电话(可选), address:地址(可选), remark:备注(可选), customer_id:编号(不传自动生成)"""
+    missing = []
+    if not name:
+        missing.append("客户名称(name)")
+    if missing:
+        return json.dumps({"complete": False, "missing": missing,
+                           "hint": "请提供客户名称"}, ensure_ascii=False)
+    cid = customer_id or _next_id(db, "Customer", "CUS")
+    exists = db.execute(text("SELECT COUNT(*) FROM Customer WHERE CustomerID = :id"), {"id": cid}).scalar()
+    if exists:
+        cid = _next_id(db, "Customer", "CUS")
+    try:
+        db.execute(text("INSERT INTO Customer (CustomerID, CustomerName, ContactPerson, Phone, Address, Remark) VALUES (:id, :n, :c, :p, :a, :r)"),
+                   {"id": cid, "n": name, "c": contact or None, "p": phone or None,
+                    "a": address or None, "r": remark or None})
+        db.commit()
+        return json.dumps({"complete": True, "success": True, "id": cid,
+                           "message": f"客户 {cid}({name}) 创建成功"}, ensure_ascii=False)
+    except Exception as e:
+        db.rollback()
+        return json.dumps({"complete": False, "success": False, "error": str(e)}, ensure_ascii=False)
+
+
+@ToolRegistry.register()
+def create_product(db: Session,
+                   name: str = "", category_id: str = "", spec: str = "",
+                   unit: str = "", remark: str = "",
+                   product_id: str = "") -> str:
+    """创建商品。name:商品名称(必填), category_id:类别编号(必填,如C001), spec:规格(可选), unit:单位(可选), remark:备注(可选), product_id:编号(不传自动生成)"""
+    missing = []
+    if not name:
+        missing.append("商品名称(name)")
+    if not category_id:
+        missing.append("类别编号(category_id)，现有类别：C001电子产品 C002办公用品 C003食品饮料 C004生活用品")
+    if missing:
+        return json.dumps({"complete": False, "missing": missing,
+                           "hint": "请提供商品名称和类别编号"}, ensure_ascii=False)
+    pid = product_id or _next_id(db, "Product", "P")
+    exists = db.execute(text("SELECT COUNT(*) FROM Product WHERE ProductID = :id"), {"id": pid}).scalar()
+    if exists:
+        pid = _next_id(db, "Product", "P")
+    try:
+        db.execute(text("INSERT INTO Product (ProductID, ProductName, CategoryID, Spec, Unit, Remark) VALUES (:id, :n, :c, :s, :u, :r)"),
+                   {"id": pid, "n": name, "c": category_id or None,
+                    "s": spec or None, "u": unit or None, "r": remark or None})
+        db.commit()
+        return json.dumps({"complete": True, "success": True, "id": pid,
+                           "message": f"商品 {pid}({name}) 创建成功"}, ensure_ascii=False)
+    except Exception as e:
+        db.rollback()
+        return json.dumps({"complete": False, "success": False, "error": str(e)}, ensure_ascii=False)

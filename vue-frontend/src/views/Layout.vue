@@ -1,14 +1,11 @@
 <template>
   <el-container class="layout-container">
-    <el-aside :width="isCollapse ? '64px' : '220px'" class="layout-aside">
+    <el-aside width="220px" class="layout-aside">
       <div class="logo-container">
-        <span v-if="!isCollapse" class="logo-text">InvFlow 进销存</span>
-        <span v-else class="logo-text logo-small">IF</span>
+        <span class="logo-text">InvFlow 进销存</span>
       </div>
       <el-menu
         :default-active="route.path"
-        :collapse="isCollapse"
-        :collapse-transition="false"
         background-color="#1f2d3d"
         text-color="#bfcbd9"
         active-text-color="#409EFF"
@@ -17,6 +14,10 @@
         <el-menu-item index="/dashboard">
           <el-icon><Odometer /></el-icon>
           <template #title>仪表盘</template>
+        </el-menu-item>
+        <el-menu-item index="/agent">
+          <el-icon><MagicStick /></el-icon>
+          <template #title>AI 智能助手</template>
         </el-menu-item>
         <el-sub-menu index="2">
           <template #title>
@@ -58,9 +59,6 @@
           <el-menu-item index="/reports">综合报表</el-menu-item>
         </el-sub-menu>
       </el-menu>
-      <div class="collapse-btn" @click="isCollapse = !isCollapse">
-        <el-icon><Fold v-if="!isCollapse" /><Expand v-else /></el-icon>
-      </div>
     </el-aside>
     <el-container>
       <el-header class="layout-header">
@@ -89,11 +87,10 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Odometer, Box, Tickets, DataAnalysis, Document, Fold, Expand } from '@element-plus/icons-vue'
+import { Odometer, Box, Tickets, DataAnalysis, Document, MagicStick } from '@element-plus/icons-vue'
 import ChatAssistant from '../components/ChatAssistant.vue'
 
 const route = useRoute()
-const isCollapse = ref(false)
 
 const currentTime = ref('')
 let timer = null
@@ -140,6 +137,7 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 .logo-small { font-size: 20px; }
+
 .layout-header {
   background: #fff;
   border-bottom: 1px solid #e4e7ed;
@@ -156,20 +154,7 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 .el-menu { border-right: none; }
-.collapse-btn {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #bfcbd9;
-  cursor: pointer;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  transition: all 0.2s;
-}
-.collapse-btn:hover { color: #409EFF; background: rgba(64,158,255,0.1); }
+
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
