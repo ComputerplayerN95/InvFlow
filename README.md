@@ -162,6 +162,81 @@ Agent: 展示方案 → 询问用户确认
 
 ---
 
+## ⚙️ Agent Harness 机制
+
+Agent 系统的核心架构采用多组件协同的 Harness 设计模式：
+
+### 1. ReAct Loop（推理-行动循环）
+
+LangGraph 的 `create_react_agent` 内置完整的 **think → act → observe → repeat** 循环。Agent 每步先思考需要什么信息，再调用工具获取，观察结果后决定下一步，直到任务完成。
+
+```
+用户指令 → [思考] → [调用工具] → [观察结果] → [再思考] → ... → [生成最终回答]
+                        ↑________________________________________|
+```
+
+### 2. 工具注册表模式（Tool Registry Pattern）
+
+通过 `@ToolRegistry.register()` 装饰器实现零侵入注册。新增业务功能只需写一个函数绑一行装饰器，框架自动生成参数 Schema 并注册到 Agent。
+
+```python
+@ToolRegistry.register()
+def query_stock(db, product_id="", warehouse_id="") -> str:
+    """查询商品库存"""
+    ...
+```
+
+框架自动处理：
+- 参数 Schema 自动生成（Pydantic）
+- `db` / `audit` 等依赖自动注入
+- `None → ''` 值统一转换（避免 SQL 条件失效）
+
+### 3. 持久化 Memory（对话记忆）
+
+每次对话存入 `ChatHistory` 表，下次加载时回放上下文。支持多 session 隔离。
+
+```
+ChatHistory 表
+├── session_001 → 用户A的对话记录
+├── session_002 → 用户B的对话记录
+└── ...
+```
+
+### 4. 审计留痕（Audit Trail）
+
+所有 Agent 触发的数据库操作以 `system_ai` 身份记录到 `AuditLog` 表，操作可追溯、可回滚。
+
+### 5. 自然语言模糊匹配
+
+Agent 工具自动解析用户输入中的自然语言描述：
+
+| 用户说 | 工具接收 | 匹配方式 |
+|--------|---------|---------|
+| "北京仓" | `WH001` | 仓库名称模糊匹配 |
+| "北京总仓" | `WH001` | 精确匹配 |
+| "上海分仓" | `WH002` | 精确匹配 |
+
+### 6. 异常自愈机制
+
+Agent 在执行过程中自动检测异常并生成修复方案：
+
+```
+用户: "查一下P001库存，不够就从上海调"
+  → query_stock: 北京仓仅 1 件
+  → 自动检测: 缺货 4 件
+  → generate_transfer_plan: 从上海调 5 件到北京
+  → 询问用户 → 用户确认 → 执行调拨
+```
+
+### 7. RAG 引擎
+
+基于 ChromaDB 构建业务知识向量库，Agent 可通过 `business_qa` 工具检索业务流程文档，回答用户的操作问题。
+
+```
+业务文档 → 文本分块 → 向量化 → ChromaDB 存储
+用户问题 → 向量化 → 相似度检索 → 上下文注入 → Agent 回答
+```
+
 ## 📁 项目结构
 
 ```
