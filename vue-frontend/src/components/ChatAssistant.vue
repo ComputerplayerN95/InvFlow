@@ -1,7 +1,9 @@
 <template>
   <div class="chat-assistant">
-    <!-- 浮动按钮 -->
-    <div class="float-btn" @click="togglePanel" :class="{ active: visible }">
+    <!-- 浮动按钮（可拖动） -->
+    <div class="float-btn" :class="{ active: visible }"
+      :style="btnStyle"
+      @mousedown.prevent="startBtnDrag">
       <svg v-if="!visible" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 2a10 10 0 0 1 10 10c0 3.5-2 6.5-5 8l-3 2v-2.5A10 10 0 0 1 12 2z"/>
         <path d="M8 10h8M8 14h5"/>
@@ -11,10 +13,11 @@
       </svg>
     </div>
 
-    <!-- 聊天面板 -->
+    <!-- 聊天面板（可拖动标题栏） -->
     <transition name="slide">
-      <div v-if="visible" class="chat-panel">
-        <div class="chat-header">
+      <div v-if="visible" class="chat-panel"
+        :style="panelStyle">
+        <div class="chat-header" @mousedown.prevent="startDrag">
           <div class="header-info">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="#409EFF">
               <path d="M12 2a10 10 0 0 1 10 10c0 3.5-2 6.5-5 8l-3 2v-2.5A10 10 0 0 1 12 2z"/>
@@ -23,7 +26,7 @@
           </div>
           <div class="header-actions">
             <el-tooltip content="清空对话" placement="bottom">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="header-icon" @click="clearChat">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="header-icon" @click.stop="clearChat">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
               </svg>
             </el-tooltip>
@@ -42,10 +45,6 @@
             </div>
             <div class="bubble">
               <div class="bubble-text" style="white-space:pre-wrap">{{ msg.content }}</div>
-              <div v-if="msg.toolResult" class="tool-result">
-                <el-tag size="small" type="success" effect="plain" v-if="msg.toolResult.success">✅ 操作成功</el-tag>
-                <el-tag size="small" type="danger" effect="plain" v-else>❌ 操作失败</el-tag>
-              </div>
             </div>
           </div>
           <div v-if="loading" class="message assistant">
@@ -86,9 +85,51 @@
 </template>
 
 <script setup>
-import { ref, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 
+// ========== Session ID（localStorage 持久化） ==========
+const SESSION_KEY = 'invflow_chat_session'
+function getOrCreateSessionId() {
+  let sid = localStorage.getItem(SESSION_KEY)
+  if (!sid) {
+    sid = 'session_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)
+    localStorage.setItem(SESSION_KEY, sid)
+  }
+  return sid
+}
+const sessionId = ref(getOrCreateSessionId())
+
+// ========== 位置状态（localStorage 持久化） ==========
+const POS_KEY = 'invflow_chat_pos'
+function loadPositions() {
+  try {
+    const saved = localStorage.getItem(POS_KEY)
+    if (saved) return JSON.parse(saved)
+  } catch {}
+  return null
+}
+function savePositions() {
+  localStorage.setItem(POS_KEY, JSON.stringify({
+    btn: btnPos.value, panel: panelPos.value
+  }))
+}
+
+const defaultPos = loadPositions()
+const btnPos = ref(defaultPos?.btn || { x: null, y: null })
+const panelPos = ref(defaultPos?.panel || { x: null, y: null })
+
+// 计算样式：x/y 为 null 时不覆盖默认 CSS（right/bottom 定位）
+const btnStyle = computed(() => ({
+  left: btnPos.value.x != null ? btnPos.value.x + 'px' : undefined,
+  top: btnPos.value.y != null ? btnPos.value.y + 'px' : undefined,
+}))
+const panelStyle = computed(() => ({
+  left: panelPos.value.x != null ? panelPos.value.x + 'px' : undefined,
+  top: panelPos.value.y != null ? panelPos.value.y + 'px' : undefined,
+}))
+
+// ========== 消息 ==========
 const visible = ref(false)
 const messages = ref([
   { role: 'assistant', content: '你好！我是小库 🤖\n我可以帮你查库存、检查缺货、生成调拨方案、回答业务流程问题。\n有什么需要帮忙的吗？' }
@@ -101,10 +142,14 @@ function togglePanel() {
   visible.value = !visible.value
 }
 
-function clearChat() {
-  messages.value = [
-    { role: 'assistant', content: '对话已清空，有需要随时找我！' }
-  ]
+async function clearChat() {
+  messages.value = [{ role: 'assistant', content: '对话已清空，有需要随时找我！' }]
+  try {
+    const sid = sessionId.value
+    localStorage.removeItem(SESSION_KEY)
+    sessionId.value = 'session_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)
+    localStorage.setItem(SESSION_KEY, sessionId.value)
+  } catch {}
 }
 
 function scrollToBottom() {
@@ -113,28 +158,23 @@ function scrollToBottom() {
     if (el) el.scrollTop = el.scrollHeight
   })
 }
-
 watch(messages, scrollToBottom, { deep: true })
 
 async function sendMessage() {
   const text = inputText.value.trim()
   if (!text || loading.value) return
-
   inputText.value = ''
   messages.value.push({ role: 'user', content: text })
-
   loading.value = true
   try {
     const history = messages.value.slice(1, -1).map(m => ({
-      role: m.role,
-      content: m.content
+      role: m.role, content: m.content
     }))
-
     const res = await axios.post('/api/agent/chat', {
       message: text,
+      session_id: sessionId.value,
       history: history
     })
-
     const data = res.data
     messages.value.push({
       role: 'assistant',
@@ -154,12 +194,86 @@ function quickQuery(text) {
   inputText.value = text
   sendMessage()
 }
+
+// ========== 拖动逻辑（聊天面板标题栏） ==========
+let dragging = false
+let dragStart = { x: 0, y: 0 }
+let dragOrig = { x: 0, y: 0 }
+
+function startDrag(e) {
+  dragging = true
+  dragStart = { x: e.clientX, y: e.clientY }
+  dragOrig = { x: panelPos.value.x || (window.innerWidth - 420), y: panelPos.value.y || 162 }
+  document.addEventListener('mousemove', onDrag)
+  document.addEventListener('mouseup', stopDrag)
+}
+
+function onDrag(e) {
+  if (!dragging) return
+  panelPos.value = {
+    x: dragOrig.x + (e.clientX - dragStart.x),
+    y: dragOrig.y + (e.clientY - dragStart.y),
+  }
+}
+
+function stopDrag() {
+  dragging = false
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
+  savePositions()
+}
+
+// ========== 拖动逻辑（浮动按钮） ==========
+let btnDragging = false
+let btnDragStart = { x: 0, y: 0 }
+let btnDragOrig = { x: 0, y: 0 }
+
+function startBtnDrag(e) {
+  btnDragging = true
+  btnDragStart = { x: e.clientX, y: e.clientY }
+  btnDragOrig = {
+    x: btnPos.value.x || (window.innerWidth - 76),
+    y: btnPos.value.y || 100,
+  }
+  document.addEventListener('mousemove', onBtnDrag)
+  document.addEventListener('mouseup', stopBtnDrag)
+}
+
+function onBtnDrag(e) {
+  if (!btnDragging) return
+  btnPos.value = {
+    x: btnDragOrig.x + (e.clientX - btnDragStart.x),
+    y: btnDragOrig.y + (e.clientY - btnDragStart.y),
+  }
+}
+
+function stopBtnDrag(e) {
+  btnDragging = false
+  document.removeEventListener('mousemove', onBtnDrag)
+  document.removeEventListener('mouseup', stopBtnDrag)
+  // 如果拖动超过 5px 视为拖动，不触发放置 toggle
+  const dx = e.clientX - btnDragStart.x
+  const dy = e.clientY - btnDragStart.y
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+    // 真正拖动时不 toggle
+  } else {
+    togglePanel()
+  }
+  savePositions()
+}
+
+onUnmounted(() => {
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
+  document.removeEventListener('mousemove', onBtnDrag)
+  document.removeEventListener('mouseup', stopBtnDrag)
+})
 </script>
 
 <style scoped>
 .chat-assistant { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 
-/* 浮动按钮 */
+/* 浮动按钮（绝对定位，由 style 控制 left/top，默认右下角） */
 .float-btn {
   position: fixed;
   right: 24px;
@@ -172,15 +286,16 @@ function quickQuery(text) {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: grab;
   box-shadow: 0 4px 16px rgba(64,158,255,0.4);
   z-index: 9999;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease;
 }
-.float-btn:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(64,158,255,0.5); }
+.float-btn:active { cursor: grabbing; }
+.float-btn:hover { box-shadow: 0 6px 20px rgba(64,158,255,0.5); }
 .float-btn.active { background: #F56C6C; }
 
-/* 聊天面板 */
+/* 聊天面板（绝对定位，由 style 控制 left/top，默认右下角） */
 .chat-panel {
   position: fixed;
   right: 24px;
@@ -197,10 +312,10 @@ function quickQuery(text) {
   border: 1px solid #e4e7ed;
 }
 
-.slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
-.slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(20px); }
+.slide-enter-active, .slide-leave-active { transition: all 0.25s ease; }
+.slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(16px) scale(0.96); }
 
-/* 头部 */
+/* 头部（可拖动） */
 .chat-header {
   display: flex;
   justify-content: space-between;
@@ -208,7 +323,10 @@ function quickQuery(text) {
   padding: 14px 16px;
   background: linear-gradient(135deg, #409EFF, #337ecc);
   color: #fff;
+  cursor: grab;
+  user-select: none;
 }
+.chat-header:active { cursor: grabbing; }
 .header-info { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 500; }
 .header-icon { cursor: pointer; opacity: 0.8; transition: opacity 0.2s; }
 .header-icon:hover { opacity: 1; }
@@ -227,32 +345,23 @@ function quickQuery(text) {
   align-items: flex-start;
 }
 .message.user { flex-direction: row-reverse; }
-
 .avatar {
-  width: 28px;
-  height: 28px;
+  width: 28px; height: 28px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 .avatar.assistant { background: #409EFF; }
 .avatar.user { background: #909399; }
-
 .bubble {
   max-width: 75%;
   padding: 10px 14px;
   border-radius: 12px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #303133;
+  font-size: 13px; line-height: 1.6; color: #303133;
 }
 .message.assistant .bubble { background: #fff; border: 1px solid #e4e7ed; border-top-left-radius: 2px; }
 .message.user .bubble { background: #409EFF; color: #fff; border-top-right-radius: 2px; }
-
 .bubble-text { word-break: break-word; }
-.tool-result { margin-top: 8px; }
 
 .thinking { padding: 12px 16px; }
 .dot-pulse {
@@ -272,9 +381,7 @@ function quickQuery(text) {
   padding: 10px 12px;
   border-top: 1px solid #e4e7ed;
   background: #fff;
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
+  display: flex; gap: 8px; align-items: flex-start;
 }
 .chat-input :deep(.el-textarea__inner) { font-size: 13px; border-radius: 8px; }
 .send-btn { flex-shrink: 0; margin-top: 0; }
@@ -283,18 +390,12 @@ function quickQuery(text) {
 .chat-footer {
   padding: 8px 12px 10px;
   border-top: 1px solid #f0f0f0;
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  display: flex; gap: 6px; flex-wrap: wrap;
 }
 .suggestion {
-  font-size: 12px;
-  color: #409EFF;
-  background: #ecf5ff;
-  padding: 3px 10px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
+  font-size: 12px; color: #409EFF;
+  background: #ecf5ff; padding: 3px 10px; border-radius: 12px;
+  cursor: pointer; transition: all 0.2s;
 }
 .suggestion:hover { background: #409EFF; color: #fff; }
 </style>

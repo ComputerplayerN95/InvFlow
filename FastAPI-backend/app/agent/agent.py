@@ -30,6 +30,7 @@ from app.agent.config import (
 )
 from app.agent.tool_registry import ToolRegistry
 from app.agent.audit import AuditTrail
+from app.agent.memory import ChatMemory, ensure_chat_table
 
 
 # System Prompt — Agent 的行为规范
@@ -75,8 +76,10 @@ AGENT_SYSTEM_PROMPT = """你是一个进销存管理系统（InvFlow）的智能
 class InvFlowAgent:
     """InvFlow 智能助手"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, session_id: str = "default"):
         self.db = db
+        ensure_chat_table(db)
+        self.memory = ChatMemory(db, session_id)
         self.audit = AuditTrail(db)
         self.llm = self._init_llm()
         self.tools = ToolRegistry.get_all_tools(db=self.db)
@@ -101,11 +104,19 @@ class InvFlowAgent:
 
     def chat(self, user_input: str, history: List[Dict] = None) -> Dict[str, Any]:
         """处理用户消息，返回 Agent 回复"""
+        # 持久化用户消息
+        self.memory.save("user", user_input)
+
         messages = []
 
-        # 加入历史消息（最近10轮）
-        if history:
-            for msg in history[-10:]:
+        # 从持久化存储加载历史 + 前端传入的历史（去重）
+        db_history = self.memory.load(limit=10)
+        # 如果前端传了 history 且比数据库更新，优先用前端的
+        history_source = history if history else db_history
+
+        # 加入历史消息
+        if history_source:
+            for msg in history_source[-10:]:
                 role = msg.get("role", "")
                 content = msg.get("content", "")
                 if role == "user":
@@ -113,8 +124,13 @@ class InvFlowAgent:
                 elif role == "assistant":
                     messages.append(AIMessage(content=content))
 
-        # 加入当前用户消息
-        messages.append(HumanMessage(content=user_input))
+        # 加入当前用户消息（如果不在历史中）
+        has_current = any(
+            isinstance(m, HumanMessage) and m.content == user_input
+            for m in messages
+        )
+        if not has_current:
+            messages.append(HumanMessage(content=user_input))
 
         try:
             result = self.executor.invoke({"messages": messages})
@@ -132,6 +148,9 @@ class InvFlowAgent:
                 "input": user_input[:200],
                 "output": reply[:500],
             })
+
+            # 持久化 AI 回复
+            self.memory.save("assistant", reply)
 
             return {
                 "response": reply,
