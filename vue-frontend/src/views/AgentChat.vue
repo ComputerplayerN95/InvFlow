@@ -35,7 +35,7 @@
             </div>
             <div class="msg-bubble">
               <div class="msg-label">{{ msg.role === 'assistant' ? '小库' : '我' }}</div>
-              <div class="msg-text">{{ msg.content }}</div>
+              <div class="msg-text" v-html="renderMarkdown(msg.content)"></div>
             </div>
           </div>
 
@@ -86,6 +86,13 @@
 <script setup>
 import { ref, nextTick, watch, onUnmounted } from 'vue'
 import axios from 'axios'
+import { marked } from 'marked'
+
+marked.setOptions({ breaks: true, gfm: true })
+function renderMarkdown(text) {
+  if (!text) return ''
+  return marked.parse(text)
+}
 
 const SESSION_KEY = 'invflow_chat_session_page'
 function getOrCreateSessionId() {
@@ -220,7 +227,19 @@ onUnmounted(() => {})
 .msg-row.user .msg-bubble { background: #409EFF; color: #fff; border-top-right-radius: 2px; }
 .msg-label { font-size: 12px; color: #909399; margin-bottom: 4px; }
 .msg-row.user .msg-label { color: rgba(255,255,255,0.7); text-align: right; }
-.msg-text { white-space: pre-wrap; word-break: break-word; }
+.msg-text { word-break: break-word; }
+.msg-text :deep(table) { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 13px; }
+.msg-text :deep(th), .msg-text :deep(td) { border: 1px solid #d0d5dd; padding: 5px 10px; text-align: left; }
+.msg-text :deep(th) { background: #f2f3f5; font-weight: 600; }
+.msg-text :deep(code) { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+.msg-text :deep(pre) { background: #f5f7fa; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 8px 0; }
+.msg-text :deep(pre code) { background: none; padding: 0; }
+.msg-text :deep(ul), .msg-text :deep(ol) { padding-left: 20px; margin: 4px 0; }
+.msg-text :deep(li) { margin: 2px 0; }
+.msg-text :deep(h1), .msg-text :deep(h2), .msg-text :deep(h3) { font-size: 15px; margin: 10px 0 4px; }
+.msg-text :deep(p) { margin: 4px 0; }
+.msg-text :deep(a) { color: #409EFF; }
+.msg-text :deep(hr) { border: none; border-top: 1px solid #e4e7ed; margin: 8px 0; }
 
 .thinking-dot {
   display: inline-block;

@@ -13,7 +13,7 @@
 ## 📋 项目简介
 
 InvFlow 是一个面向中小企业的进销存（库存/采购/销售/调拨）管理系统，提供完整的业务流转和库存管理功能。系统采用 **FIFO 先进先出法** 和 **移动加权平均法** 两种成本核算方式，并集成 **AI 智能助手**，支持自然语言指令驱动的业务操作。
-<img width="1920" height="952" alt="image" src="https://github.com/user-attachments/assets/f251b550-166e-44f7-b95a-2e9176ab3c77" />
+![img.png](img.png)c="https://github.com/user-attachments/assets/f251b550-166e-44f7-b95a-2e9176ab3c77" />
 
 
 ### 核心功能一览

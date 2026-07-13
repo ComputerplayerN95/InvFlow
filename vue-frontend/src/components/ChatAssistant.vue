@@ -52,7 +52,7 @@
               </svg>
             </div>
             <div class="bubble">
-              <div class="bubble-text" style="white-space:pre-wrap">{{ msg.content }}</div>
+              <div class="bubble-text" v-html="renderMarkdown(msg.content)"></div>
             </div>
           </div>
           <div v-if="loading" class="message assistant">
@@ -98,6 +98,14 @@
 <script setup>
 import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
+import { marked } from 'marked'
+
+// Markdown 渲染
+marked.setOptions({ breaks: true, gfm: true })
+function renderMarkdown(text) {
+  if (!text) return ''
+  return marked.parse(text)
+}
 
 // ========== Session ID（localStorage 持久化） ==========
 const SESSION_KEY = 'invflow_chat_session'
@@ -373,6 +381,18 @@ onUnmounted(() => {
 .message.assistant .bubble { background: #fff; border: 1px solid #e4e7ed; border-top-left-radius: 2px; }
 .message.user .bubble { background: #409EFF; color: #fff; border-top-right-radius: 2px; }
 .bubble-text { word-break: break-word; }
+.bubble-text :deep(table) { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 12px; }
+.bubble-text :deep(th), .bubble-text :deep(td) { border: 1px solid #d0d5dd; padding: 4px 8px; text-align: left; }
+.bubble-text :deep(th) { background: #f2f3f5; font-weight: 600; }
+.bubble-text :deep(code) { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+.bubble-text :deep(pre) { background: #f5f7fa; padding: 10px; border-radius: 6px; overflow-x: auto; margin: 6px 0; }
+.bubble-text :deep(pre code) { background: none; padding: 0; }
+.bubble-text :deep(ul), .bubble-text :deep(ol) { padding-left: 20px; margin: 4px 0; }
+.bubble-text :deep(li) { margin: 2px 0; }
+.bubble-text :deep(h1), .bubble-text :deep(h2), .bubble-text :deep(h3) { font-size: 14px; margin: 8px 0 4px; }
+.bubble-text :deep(p) { margin: 4px 0; }
+.bubble-text :deep(a) { color: #409EFF; }
+.bubble-text :deep(hr) { border: none; border-top: 1px solid #e4e7ed; margin: 8px 0; }
 
 .thinking { padding: 12px 16px; }
 .dot-pulse {
