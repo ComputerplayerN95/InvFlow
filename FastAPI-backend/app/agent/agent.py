@@ -132,34 +132,49 @@ class InvFlowAgent:
         if not has_current:
             messages.append(HumanMessage(content=user_input))
 
+        # 重试机制：pymysql 连接可能被前一个错误损坏
+        last_error = None
+        for attempt in range(2):
+            try:
+                result = self.executor.invoke({"messages": messages})
+                output_messages = result.get("messages", [])
+                reply = ""
+                for msg in reversed(output_messages):
+                    if isinstance(msg, AIMessage) and msg.content:
+                        reply = msg.content
+                        break
+                if not reply:
+                    reply = "处理完成，但没有生成文本回复。"
+
+                self.audit.record("agent_chat", {
+                    "input": user_input[:200],
+                    "output": reply[:500],
+                })
+                self.memory.save("assistant", reply)
+                return {"response": reply, "audit_logs": self.audit.get_summary()}
+            except Exception as e:
+                last_error = e
+                if attempt == 0:
+                    # 重建 db session 和 executor
+                    try:
+                        self.db.close()
+                    except Exception:
+                        pass
+                    from app.database import SessionLocal
+                    self.db = SessionLocal()
+                    self.audit = AuditTrail(self.db)
+                    self.tools = ToolRegistry.get_all_tools(db=self.db)
+                    self.executor = self._init_executor()
+                    continue
+                break
+
+        # 所有重试都失败
+        error_msg = f"处理出错: {str(last_error)}"
         try:
-            result = self.executor.invoke({"messages": messages})
-            output_messages = result.get("messages", [])
-            # 取最后一条 AI 消息作为回复
-            reply = ""
-            for msg in reversed(output_messages):
-                if isinstance(msg, AIMessage) and msg.content:
-                    reply = msg.content
-                    break
-            if not reply:
-                reply = "处理完成，但没有生成文本回复。"
-
-            self.audit.record("agent_chat", {
-                "input": user_input[:200],
-                "output": reply[:500],
-            })
-
-            # 持久化 AI 回复
-            self.memory.save("assistant", reply)
-
-            return {
-                "response": reply,
-                "audit_logs": self.audit.get_summary(),
-            }
-        except Exception as e:
-            error_msg = f"处理出错: {str(e)}"
-            self.audit.record("agent_error", {"input": user_input[:200], "error": str(e)}, result="failed")
-            return {"response": error_msg, "audit_logs": self.audit.get_summary()}
+            self.audit.record("agent_error", {"input": user_input[:200], "error": str(last_error)}, result="failed")
+        except Exception:
+            pass
+        return {"response": error_msg, "audit_logs": self.audit.get_summary()}
 
     def list_tools(self) -> List[Dict]:
         """列出可用工具"""

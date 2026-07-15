@@ -7,6 +7,7 @@
 import json
 from datetime import datetime
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.agent.config import SYSTEM_AI_OPERATOR
 
@@ -31,8 +32,8 @@ class AuditTrail:
         # 写入数据库 audit_log 表
         try:
             self.db.execute(
-                "INSERT INTO AuditLog (Operator, Action, Detail, Result, CreatedAt) "
-                "VALUES (:op, :action, :detail, :result, :ts)",
+                text("INSERT INTO AuditLog (Operator, Action, Detail, Result, CreatedAt) "
+                     "VALUES (:op, :action, :detail, :result, :ts)"),
                 {"op": entry["operator"], "action": action,
                  "detail": entry["detail"], "result": result, "ts": datetime.now()}
             )
@@ -48,7 +49,7 @@ class AuditTrail:
 def ensure_audit_table(db: Session):
     """确保审计表存在"""
     try:
-        db.execute("""
+        db.execute(text("""
             CREATE TABLE IF NOT EXISTS AuditLog (
                 LogID INT AUTO_INCREMENT PRIMARY KEY,
                 Operator VARCHAR(50) NOT NULL,
@@ -57,7 +58,7 @@ def ensure_audit_table(db: Session):
                 Result VARCHAR(20) DEFAULT 'success',
                 CreatedAt DATETIME DEFAULT NOW()
             )
-        """)
+        """))
         db.commit()
     except Exception:
         db.rollback()
